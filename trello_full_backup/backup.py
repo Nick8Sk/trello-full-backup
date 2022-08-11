@@ -104,7 +104,8 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
                 try:
                     content = requests.get(attachment['url'],
                                            stream=True,
-                                           timeout=ATTACHMENT_REQUEST_TIMEOUT)
+                                           timeout=ATTACHMENT_REQUEST_TIMEOUT,
+                                           headers={"Authorization":"OAuth oauth_consumer_key=\"{}\", oauth_token=\"{}\"".format(API_KEY, API_TOKEN)})
                 except Exception:
                     sys.stderr.write('Failed download: {}'.format(attachment_name))
                     continue
