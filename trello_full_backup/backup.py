@@ -79,6 +79,7 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
     attachments = [a for a in c['attachments']
                    if a['bytes'] is not None and
                    (a['bytes'] < max_size or max_size == -1)]
+    failures = []
 
     if len(attachments) > 0:
         # Enter attachments directory
@@ -109,6 +110,7 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
                     content.raise_for_status()
                 except Exception as e:
                     sys.stderr.write('Failed download: {} - {}'.format(attachment_name, e))
+                    failures.append((attachment_name, e))
                     continue
 
                 with open(attachment_name, 'wb') as f:
@@ -129,6 +131,8 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
 
         # Exit attachments directory
         os.chdir('..')
+
+    return failures
 
 
 def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
@@ -155,10 +159,14 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
     write_file(meta_file_name, c)
     write_file(description_file_name, c['desc'], dumps=False)
 
-    download_attachments(c, attachment_size, tokenize, symlinks)
+    failed_attachments = download_attachments(c, attachment_size, tokenize, symlinks)
 
     # Exit card directory
     os.chdir('..')
+    return [
+        (os.path.join(card_name, "attachments", attchment_name), exception)
+        for attchment_name, exception in failed_attachments
+    ]
 
 
 def backup_board(board, args):
@@ -213,6 +221,7 @@ def backup_board(board, args):
     for list_cards in lists.values():
         list_cards.sort(key=lambda card: card['pos'])
 
+    failed_attachments = []
     for id_list, ls in enumerate(board_details['lists']):
         list_name = get_name(tokenize, ls['name'], ls["id"], id_list)
 
@@ -232,13 +241,21 @@ def backup_board(board, args):
         cards = lists[ls['id']]
 
         for id_card, c in enumerate(cards):
-            backup_card(id_card, c, args.attachment_size, tokenize, symlinks)
+            card_failed_attachments = backup_card(id_card, c, args.attachment_size, tokenize, symlinks)
+            failed_attachments.extend(
+                [(os.path.join(list_name, attchment_path), exception)
+                 for attchment_path, exception in card_failed_attachments])
 
         # Exit list directory
         os.chdir('..')
 
     # Exit sub directory
     os.chdir('..')
+
+    if failed_attachments:
+        raise Exception("Failed {} attachment downloads:\n{}".format(
+            len(failed_attachments),
+            "\n".join((path for path, e in failed_attachments))))
 
 
 def cli():
