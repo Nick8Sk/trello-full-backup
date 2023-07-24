@@ -42,23 +42,25 @@ def get_extension(filename):
     return os.path.splitext(filename)[1]
 
 
-def get_name(tokenize, real_name, backup_name, element_id=None):
+def get_name(tokenize, symlinks, real_name, backup_name, element_id=None):
     ''' Get back the name for the tokenize mode or the real name in the card.
         If there is an ID, keep it
     '''
     if tokenize:
         name = backup_name
     elif element_id is None:
-        name = '{}'.format(sanitize_file_name(real_name))
+        name = '{}'.format(sanitize_file_name(real_name, symlinks))
     else:    
-        name = '{}_{}'.format(element_id, sanitize_file_name(real_name))
+        name = '{}_{}'.format(element_id, sanitize_file_name(real_name, symlinks))
     return name
 
 
-def sanitize_file_name(name):
+def sanitize_file_name(name, ascii_only = False):
     ''' Stip problematic characters for a file name '''
     new_name = re.sub(r'[<>:\/\|\?\*\']', '_', name)[:FILE_NAME_MAX_LENGTH]
-    return inflection.transliterate(new_name)  # Change accented characters to ascii
+    if ascii_only:
+        new_name = inflection.transliterate(new_name)  # Change accented characters to ascii
+    return new_name
 
 
 def write_file(file_name, obj, dumps=True):
@@ -95,7 +97,9 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
             backup_name = '{}_{}{}'.format(attachment['id'],
                                            attachment['bytes'],
                                            extension)
-            attachment_name = get_name(tokenize, attachment["name"],
+            attachment_name = get_name(tokenize,
+                                       symlinks,
+                                       attachment["name"],
                                        backup_name,
                                        id_attachment)
 
@@ -124,6 +128,7 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
             if symlinks:
                 try:                     
                     os.symlink(attachment_name, get_name(False,
+                                                         True,
                                                          attachment["name"],
                                                          backup_name, id_attachment))
                 except FileExistsError:
@@ -137,12 +142,12 @@ def download_attachments(c, max_size, tokenize=False, symlinks=False):
 
 def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
     ''' Backup the card <c> with id <id_card> '''
-    card_name = get_name(tokenize, c["name"], c['id'], id_card)
+    card_name = get_name(tokenize, symlinks, c["name"], c['id'], id_card)
 
     mkdir(card_name)
     if symlinks:
         try:
-            os.symlink(card_name, get_name(False, c["name"], c['id'], id_card))
+            os.symlink(card_name, get_name(False, True, c["name"], c['id'], id_card))
         except FileExistsError:
             pass
 
@@ -191,6 +196,7 @@ def backup_board(board, args):
     board_details = board_request.json()
 
     board_dir = get_name(tokenize,
+                         symlinks,
                          board_details['name'],
                          board_details['id'])
 
@@ -199,6 +205,7 @@ def backup_board(board, args):
     if symlinks:
         try:
             os.symlink(board_dir, get_name(False,
+                                           True,
                                            board_details['name'],
                                            board_details['id']))
         except FileExistsError:
@@ -223,13 +230,13 @@ def backup_board(board, args):
 
     failed_attachments = []
     for id_list, ls in enumerate(board_details['lists']):
-        list_name = get_name(tokenize, ls['name'], ls["id"], id_list)
+        list_name = get_name(tokenize, symlinks, ls['name'], ls["id"], id_list)
 
         mkdir(list_name)
 
         if symlinks:
             try:
-                os.symlink(list_name, get_name(False, ls['name'], ls["id"], id_list))
+                os.symlink(list_name, get_name(False, True, ls['name'], ls["id"], id_list))
             except FileExistsError:
                 pass
                 
