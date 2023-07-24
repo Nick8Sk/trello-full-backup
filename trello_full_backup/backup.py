@@ -163,6 +163,8 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
     meta_file_name = 'card.json'
     description_file_name = 'description.md'
     actions_file_name = 'actions.json'
+    comments_file_name = 'comments.md'
+    comments = ''
 
     for id, clist_id in enumerate(c['idChecklists']):
         checkList = requests.get(
@@ -172,11 +174,19 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
         filename = 'checklist_' + clist_id + '.txt'
         write_file(filename, checkList, dumps=False)
 
+    for action_id, action in enumerate(card_actions):
+        if action['type'] == 'commentCard':
+            action_date = action['date']
+            comment_text = action['data']['text']
+            username = action['memberCreator']['username']
+            comments += (('date: {}\r\nusername: {}\r\ncomment: {}\r\n\r\n'.format(action_date, username, comment_text)))
+
     print('Saving', card_name)
     print('Saving', meta_file_name, 'and', description_file_name)
     write_file(meta_file_name, c)
     write_file(description_file_name, c['desc'], dumps=False)
     write_file(actions_file_name, card_actions)
+    write_file(comments_file_name, comments, dumps=False)
 
     failed_attachments = download_attachments(c, attachment_size, tokenize, symlinks)
 
