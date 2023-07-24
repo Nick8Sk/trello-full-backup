@@ -164,6 +164,14 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
     description_file_name = 'description.md'
     actions_file_name = 'actions.json'
 
+    for id, clist_id in enumerate(c['idChecklists']):
+        checkList = requests.get(
+            ''.join(('{}checklists/{}{}&'.format(API, clist_id, auth))),
+            'checkItems=all&'
+            'checkItem_fields=all').text
+        filename = 'checklist_' + clist_id + '.txt'
+        write_file(filename, checkList, dumps=False)
+
     print('Saving', card_name)
     print('Saving', meta_file_name, 'and', description_file_name)
     write_file(meta_file_name, c)
