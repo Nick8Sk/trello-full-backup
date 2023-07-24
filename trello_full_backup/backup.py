@@ -144,6 +144,10 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
     ''' Backup the card <c> with id <id_card> '''
     card_name = get_name(tokenize, symlinks, c["name"], c['id'], id_card)
 
+    card_actions = requests.get(''.join((
+        '{}cards/{}/actions{}&'.format(API, c["id"], auth)
+    ))).json()
+
     mkdir(card_name)
     if symlinks:
         try:
@@ -158,11 +162,13 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
 
     meta_file_name = 'card.json'
     description_file_name = 'description.md'
+    actions_file_name = 'actions.json'
 
     print('Saving', card_name)
     print('Saving', meta_file_name, 'and', description_file_name)
     write_file(meta_file_name, c)
     write_file(description_file_name, c['desc'], dumps=False)
+    write_file(actions_file_name, card_actions)
 
     failed_attachments = download_attachments(c, attachment_size, tokenize, symlinks)
 
