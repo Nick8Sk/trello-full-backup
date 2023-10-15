@@ -182,7 +182,8 @@ def backup_card(id_card, c, attachment_size, tokenize=False, symlinks=False):
             comments += (('date: {}\r\nusername: {}\r\ncomment: {}\r\n\r\n'.format(action_date, username, comment_text)))
 
     print('Saving', card_name)
-    print('Saving', meta_file_name, 'and', description_file_name)
+    print('Saving to JSON:', meta_file_name, 'and', actions_file_name)
+    print('Saving to MD:', comments_file_name, 'and', description_file_name)
     write_file(meta_file_name, c)
     write_file(description_file_name, c['desc'], dumps=False)
     write_file(actions_file_name, card_actions)

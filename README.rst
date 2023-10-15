@@ -126,7 +126,7 @@ Options
 
 ::
 
-    usage: trello-full-backup [-h] [-d [DEST]] [-i] [-t] [-B] [-L] [-C] [-o]
+    usage: trello-full-backup [-h] [-d [DEST]] [-i] [-t] [-B] [-L] [-C] [-o] [-s]
                               [-a [ATTACHMENT_SIZE]]
 
     Trello Full Backup
@@ -137,6 +137,8 @@ Options
       -i, --incremental     Backup in an already existing folder incrementally
       -t, --tokenize        Tokenize the names for folders and files. Useful for
                             scripts
+      -s, --symlinks        Create name-based symlinks that point to these tokens (on OSes that accept symlinks),
+                            which are reset on each backup to reflect the current board/list/cards structures and names.
       -B, --closed-boards   Backup closed board
       -L, --archived-lists  Backup archived lists
       -C, --archived-cards  Backup archived cards
